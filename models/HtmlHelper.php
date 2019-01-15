@@ -1,6 +1,7 @@
 <?php
 
-namespace models;
+namespace trivial\models;
+use trivial\controllers\App;
 
 /**
  * Model for HtmlHelper
@@ -9,6 +10,26 @@ namespace models;
  */
 class HtmlHelper {
     
+    /**
+     * jsRequire
+     * @param array $jsRequire
+     */
+    public static function jsRequire(array $jsRequire=[]) {
+        foreach ($jsRequire as $jsRequireType) {
+            echo App::params("includedJavascripts.".$jsRequireType);
+        }
+    }
+    
+    /**
+     * cssRequire
+     * @param array $jsRequire
+     */
+    public static function cssRequire(array $cssRequire=[]) {
+        foreach ($cssRequire as $cssRequireType) {
+            echo App::params("includedCSS.".$cssRequireType);
+        }
+    }
+
     /**
      * Get array with pagination info
      * 

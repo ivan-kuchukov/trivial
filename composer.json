@@ -1,0 +1,7 @@
+{
+	"name":"ivan-kuchukov/trivial",
+	"description":"php-framework",
+	"autoload": {
+        "psr-4": {"trivial\\": ""}
+    }
+}

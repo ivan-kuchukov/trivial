@@ -1,6 +1,7 @@
 <?php
 
-namespace models;
+namespace trivial\models;
+use trivial\controllers\App;
 
 /**
  * Model for work with Database
@@ -11,14 +12,14 @@ class MariaDatabase implements DatabaseInterface {
     private $connection;
     private $result;
     private $affectedRows;
-    private $errorMode;
+    private $errorLog;
     private $queriesLog;
     private $queriesCount = 0;
     private $errorQueriesCount = 0;
 
     public function __construct(array $dbOptions) {
-        $this->errorMode = \controllers\App::params('db.errorMode');
-        $this->queriesLog = \controllers\App::params('db.queriesLog');
+        $this->errorLog = App::params('db.errorLog');
+        $this->queriesLog = App::params('db.queriesLog');
         @$this->connection = new \mysqli(
             $dbOptions['servername'], 
             $dbOptions['username'], 
@@ -48,12 +49,12 @@ class MariaDatabase implements DatabaseInterface {
         return ($key===null) ? $error : $error[$key];
     }
     
-    public function setErrorMode($errorMode) {
-        $this->errorMode = $errorMode;
+    public function setErrorMode($errorLog) {
+        $this->errorLog = $errorLog;
     }
     
     public function getErrorMode() {
-        return $this->errorMode;
+        return $this->errorLog;
     }
     
     public function getResult() {
@@ -84,22 +85,19 @@ class MariaDatabase implements DatabaseInterface {
 
     public function exec(string $query, array $vars=[]) {
         empty($vars) ? $this->execWithoutBind($query) : $this->execWithBind($query, $vars);
+        $this->queriesCount++;
         if ( ! $this->result ) {
-            if ($this->errorMode=="debug" && $this->connection->errno>0 ) {
+            $this->errorQueriesCount++;
+            if ($this->errorLog=="display") {
                 echo 'Error in DB query: [' . $this->connection->errno . '] '
                     . $this->connection->error . PHP_EOL;
-            } elseif ($this->errorMode=="log") {
-                Log::add("errorsFile",__METHOD__, $this->connection->error);
             }
-        }
-        if ( $this->queriesLog ) {
-            $text = $query;
-            $text .= (!empty($vars)) ? PHP_EOL . ' ' . json_encode($vars) : '';
-            if ($this->connection->errno!==0) {
-                $text .= PHP_EOL . ' Error:' . $this->connection->error;
-                $this->errorQueriesCount++;
+            if ($this->errorLog=="log" || $this->errorLog=="display") {
+                Log::add("dbDebugFile",__METHOD__, $query . ". ERROR: " . $this->connection->error);
+                Log::add("errorsFile",__METHOD__, $query . ". ERROR: " . $this->connection->error);
             }
-            $this->queriesCount++;
+        } else if ( $this->queriesLog ) {
+            $text = $query . (!empty($vars) ? PHP_EOL . ' ' . json_encode($vars) : '' );
             Log::add("dbDebugFile",__METHOD__, $text);
         }
         return $this;
@@ -139,7 +137,8 @@ class MariaDatabase implements DatabaseInterface {
     }
 
     private function fetch() {
-        return (get_class($this->result)=='mysqli_result') ? $this->fetchResult() : $this->fetchStmt();
+        return (get_class($this->result)=='mysqli_result') 
+                ? $this->fetchResult() : $this->fetchStmt();
     }
     
     private function syncId($data,$syncId) {
@@ -160,6 +159,9 @@ class MariaDatabase implements DatabaseInterface {
     }
 
     public function getAll($syncId=null) {
+        if (!is_object($this->result)) {
+            return false;
+        }
         $data = $this->fetch();
         $data = (!is_null($syncId)) ? $this->syncId($data,$syncId) : $data;
         $text = (count($data)>0 ? count($data) . ' rows: ' . json_encode(current($data)) . ',...' : '[]');
@@ -170,6 +172,9 @@ class MariaDatabase implements DatabaseInterface {
     }
     
     public function getArray() {
+        if (!is_object($this->result)) {
+            return false;
+        }
         $data = $this->fetch();
         $data = isset($data[0]) ? $data[0] : null;
         if ($this->queriesLog) {
@@ -179,6 +184,9 @@ class MariaDatabase implements DatabaseInterface {
     }
     
     public function getScalar() {
+        if (!is_object($this->result)) {
+            return false;
+        }
         $data = $this->fetch();
         $data = isset($data[0]) ? $data[0][key($data[0])] : null;
         if ($this->queriesLog) {

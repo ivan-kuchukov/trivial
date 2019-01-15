@@ -1,6 +1,6 @@
 <?php
 
-namespace controllers;
+namespace trivial\controllers;
 
 /**
  * Base Controller
@@ -12,12 +12,12 @@ class Controller {
         foreach ($properties as $var=>$value) {
             $$var = $value;
         }
-        include ROOT_DIR . DIRECTORY_SEPARATOR . 'views' . DIRECTORY_SEPARATOR . $viewName . '.php';
+        include ROOT_DIR . DIR_SEP . 'views' . DIR_SEP . $viewName . '.php';
         
-        if ( App::params("db.errorMode") === "debug" ) {
+        if ( App::params("debug") ) {
             // Debug Panel
             $debug['database'] = !is_null(App::db()) ? App::db()->statistics() : [];
-            include App::getPath() . 'views' . DIRECTORY_SEPARATOR . 'debugPanel.php';
+            include App::getPath() . 'views' . DIR_SEP . 'debugPanel.php';
         }
     }
     

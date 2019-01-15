@@ -1,6 +1,7 @@
 <?php
 
-namespace controllers;
+namespace trivial\controllers;
+use trivial\models\Log;
 
 /**
  * UrlController - parse request and redirect to controller and action
@@ -30,20 +31,20 @@ class UrlController {
             $controllerName=ucfirst(App::params('defaultController'));
             $actionName='index';
         }
-        $controllerName = '\\controllers\\' . $controllerName . 'Controller';
+        $controllerName = 'app\\controllers\\' . $controllerName . 'Controller';
         
         if (class_exists($controllerName)) {
             $controller = new $controllerName();
             if (@method_exists($controller,$actionName)) {
                 $controller->$actionName();
             } elseif (@method_exists($controller,'index')) {
-                \models\Log::add("errorsFile",__METHOD__, "Controller $controllerName has no action $actionName");
+                Log::add("errorsFile",__METHOD__, "Controller $controllerName has no action $actionName");
                 $controller->index();
             } else {
-                \models\Log::add("errorsFile",__METHOD__, "Controller $controllerName has no Index action");
+                Log::add("errorsFile",__METHOD__, "Controller $controllerName has no Index action");
             }
         } else {
-            \models\Log::add("errorsFile",__METHOD__, "Controller $controllerName not found");
+            Log::add("errorsFile",__METHOD__, "Controller $controllerName not found");
         }
     }
 

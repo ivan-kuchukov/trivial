@@ -1,7 +1,7 @@
 <?php
 
-namespace controllers;
-use controllers\App;
+namespace trivial\controllers;
+use trivial\controllers\App;
 
 /**
  * LogController
@@ -15,14 +15,14 @@ class LogController extends Controller {
         $this->showLog('dbDebug.log');
     }
     
-    public function actionDatabaseErrors() {
+    public function actionErrors() {
         echo "Error Log:";
         $this->showLog('errors.log');
     }
     
     private function showLog($logFilename) {
         $logUID = filter_input(INPUT_GET, 'uid', FILTER_SANITIZE_SPECIAL_CHARS);
-        $handle = @fopen(ROOT_DIR . DIRECTORY_SEPARATOR . 'runtime' . DIRECTORY_SEPARATOR . $logFilename, "r");
+        $handle = @fopen(ROOT_DIR . DIR_SEP . 'runtime' . DIR_SEP . $logFilename, "r");
         if ($handle) {
             echo "<pre>";
             while (($buffer = fgets($handle, 4096)) !== false) {

@@ -1,6 +1,7 @@
 <?php
 
-namespace controllers;
+namespace trivial\controllers;
+use trivial\models\DatabaseFactory;
 
 /**
  * Application
@@ -10,7 +11,7 @@ namespace controllers;
 class App {
     private static $db = null;
     private static $params = null;
-    private static $optionsFile = ROOT_DIR . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php';
+    private static $optionsFile = ROOT_DIR . DIR_SEP . 'config' . DIR_SEP . 'config.php';
     private static $uid = null;
 
     public static function params($opt='') {
@@ -37,7 +38,7 @@ class App {
     }
     
     private static function createDb($name) {
-        self::$db = \models\DatabaseFactory::create(self::params($name));
+        self::$db = DatabaseFactory::create(self::params($name));
         if (self::$db->getError('connectionCode') !== 0) {
             echo "Can't connect to DB";
             exit(1);
@@ -46,7 +47,7 @@ class App {
     }
     
     public static function getPath() {
-        return __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR;
+        return __DIR__ . DIR_SEP . '..' . DIR_SEP;
     }
     
     public static function getUID() {

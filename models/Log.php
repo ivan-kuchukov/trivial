@@ -1,6 +1,7 @@
 <?php
 
-namespace models;
+namespace trivial\models;
+use trivial\controllers\App;
 
 /**
  * Log
@@ -8,6 +9,8 @@ namespace models;
  * @author Ivan Kuchukov <ivan.kuchukov@gmail.com>
  */
 class Log {
+    private static $rows = [];
+
     /**
      * Add log string
      * @param type $type - type of log in configuration
@@ -16,10 +19,21 @@ class Log {
      * @return type
      */
     public static function add($type,$method,$text) {
-        if ( \controllers\App::params("log.type") == 'file' ) {
-            $file = ROOT_DIR . DIRECTORY_SEPARATOR . \controllers\App::params("log.".$type);
-            $log =  date("Y-m-d H:i:s") . " " . \controllers\App::getUID() . " (".$method.") ".$text.PHP_EOL;
+        if ( App::params("log.type") == 'file' ) {
+            $file = ROOT_DIR . DIR_SEP . App::params("log.".$type);
+            $log =  date("Y-m-d H:i:s") . " " . App::getUID() . " (".$method.") ".$text.PHP_EOL;
+            self::$rows[$type] = isset(self::$rows[$type]) ? self::$rows[$type]++ : 1;
             return file_put_contents($file, $log, FILE_APPEND);
         }
+    }
+    
+    /**
+     * Statistics
+     * @return type
+     */
+    public static function statistics(string $type=null) {
+        return is_null($type) 
+                ? self::$rows 
+                : ( isset(self::$rows[$type]) ? self::$rows[$type] : null );
     }
 }

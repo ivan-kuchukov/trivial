@@ -1,6 +1,6 @@
 <?php
 
-namespace models;
+namespace trivial\models;
 
 /**
  * Model for work with Database
