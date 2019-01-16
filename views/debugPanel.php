@@ -1,3 +1,4 @@
+<br>
 <div style="background-color:lavender;padding-left:1em; position:fixed;bottom:0;width:100%">
     Debug Panel.
     <a href="<?= $_SERVER['BASE'] ?>/log/database_queries?uid=<?= trivial\controllers\App::getUID() ?>" target="_blank">

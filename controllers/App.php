@@ -16,7 +16,7 @@ class App {
 
     public static function params($opt='') {
         if (is_null(self::$params)) {
-            self::$params = require self::$optionsFile;
+            self::loadParams();
         }
         $param = self::$params;
         foreach (preg_split('/\./', $opt, null, PREG_SPLIT_NO_EMPTY) as $value) {
@@ -26,12 +26,19 @@ class App {
     }
     
     public static function setParam(string $name,string $value) {
+        if (is_null(self::$params)) {
+            self::loadParams();
+        }
         $param = &self::$params;
         foreach (preg_split('/\./', $name, null, PREG_SPLIT_NO_EMPTY) as $val) {
             $param = &$param[$val];
         }
         $param = $value;
-    } 
+    }
+    
+    private static function loadParams() {
+        self::$params = require self::$optionsFile;
+    }
 
     public static function db($name = 'db') {
         return self::$db ?? self::createDB($name);
