@@ -27,8 +27,8 @@ class LogController extends Controller {
             echo "<pre>";
             while (($buffer = fgets($handle, 4096)) !== false) {
                 if (is_null($logUID) || strpos($buffer,$logUID)) {
-                    $buffer = preg_replace('/^[^ ]* /', '', $buffer);
                     if (!is_null($logUID)) {
+                        $buffer = preg_replace('/^[^ ]* /', '', $buffer);
                         $buffer = preg_replace('/'.$logUID.' /', '', $buffer);
                     }
                     echo $buffer;

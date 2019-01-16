@@ -21,7 +21,8 @@ class Log {
     public static function add($type,$method,$text) {
         if ( App::params("log.type") == 'file' ) {
             $file = ROOT_DIR . DIR_SEP . App::params("log.".$type);
-            $log =  date("Y-m-d H:i:s") . " " . App::getUID() . " (".$method.") ".$text.PHP_EOL;
+            $log =  date_format(date_create(),"Y-m-d H:i:s.u") . " " 
+                . App::getUID() . " (".$method.") ".$text.PHP_EOL;
             self::$rows[$type] = isset(self::$rows[$type]) ? self::$rows[$type]++ : 1;
             return file_put_contents($file, $log, FILE_APPEND);
         }
