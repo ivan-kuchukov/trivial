@@ -18,7 +18,7 @@ class HtmlHelper {
      * @param array $jsRequire
      */
     public static function jsRequire(array $jsRequire=[]) {
-        self::$js[] = array_merge(self::$js[],$jsRequire);
+        self::$js = array_merge(self::$js,$jsRequire);
     }
     
     /**
@@ -37,7 +37,7 @@ class HtmlHelper {
      * @param array $cssRequire
      */
     public static function cssRequire(array $cssRequire=[]) {
-        self::$css[] = array_merge(self::$css[],$cssRequire);
+        self::$css = array_merge(self::$css,$cssRequire);
     }
     
     /**
