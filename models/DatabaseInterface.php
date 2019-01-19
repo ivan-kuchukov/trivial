@@ -12,6 +12,7 @@ interface DatabaseInterface {
     /**
      * Connect to DB
      * @param array $dbOptions
+     * persistentConnection - use for persistent connect
      */
     public function __construct(array $dbOptions);
     
