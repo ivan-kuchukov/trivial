@@ -46,8 +46,8 @@ class PostgreDatabase implements DatabaseInterface {
             'code'=>null,
         ];
         if ($error['connectionCode']===PGSQL_CONNECTION_OK) {
-            $error['description']=pg_result_error($this->result);
-            $error['code']=pg_result_error($this->result);
+            $error['description']=pg_last_error($this->connection);
+            $error['code']=pg_last_error($this->connection) ? false : true;
         }
         return ($key===null) ? $error : $error[$key];
     }
@@ -65,8 +65,10 @@ class PostgreDatabase implements DatabaseInterface {
     }
 
     private function execWithoutBind(string $query) {
-        $this->result = pg_query($this->connection,$query);
-        $this->affectedRows = pg_affected_rows($this->result);
+        $this->result = @pg_query($this->connection,$query);
+        if ($this->result) {
+            $this->affectedRows = pg_affected_rows($this->result);
+        }
     }
     
     private function execWithBind(string $query, array $vars=[]) {
@@ -78,8 +80,10 @@ class PostgreDatabase implements DatabaseInterface {
         if (!$result) {
             return $result;
         }
-        $this->result = pg_execute($this->connection,"",$values);
-        $this->affectedRows = pg_affected_rows($this->result);
+        $this->result = @pg_execute($this->connection,"",$values);
+        if ($this->result) {
+            $this->affectedRows = pg_affected_rows($this->result);
+        }
     }
 
     public function exec(string $query, array $vars=[]) {
@@ -88,12 +92,11 @@ class PostgreDatabase implements DatabaseInterface {
         if ( ! $this->result ) {
             $this->errorQueriesCount++;
             if ($this->errorLog=="display") {
-                echo 'Error in DB query: [' . $this->connection->errno . '] '
-                    . $this->connection->error . PHP_EOL;
+                echo 'Error in DB query: ' . $this->getError('description') . PHP_EOL;
             }
             if ($this->errorLog=="log" || $this->errorLog=="display") {
-                Log::add("dbDebugFile",__METHOD__, $query . ". ERROR: " . $this->connection->error);
-                Log::add("errorsFile",__METHOD__, $query . ". ERROR: " . $this->connection->error);
+                Log::add("dbDebugFile",__METHOD__, $query . ". ERROR: " . $this->getError('description') );
+                Log::add("errorsFile",__METHOD__, $query . ". ERROR: " . $this->getError('description') );
             }
         } else if ( $this->queriesLog ) {
             $text = $query . (!empty($vars) ? PHP_EOL . ' ' . json_encode($vars) : '' );
