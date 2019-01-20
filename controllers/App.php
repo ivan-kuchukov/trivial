@@ -13,6 +13,7 @@ class App {
     private static $params = null;
     private static $optionsFile = ROOT_DIR . DIR_SEP . 'config' . DIR_SEP . 'config.php';
     private static $uid = null;
+    private static $input = null;
 
     public static function params($opt='') {
         if (is_null(self::$params)) {
@@ -66,6 +67,27 @@ class App {
     
     public static function setUID(string $uid) {
         self::$uid = $uid;
+    }
+    
+    private static function readInput() {
+        if(is_null(self::$input)) {
+            self::$input = json_decode(file_get_contents('php://input'), true);
+        }
+    }
+
+    public static function get($param) {
+        self::readInput();
+        return !empty($param) 
+            ? filter_input(INPUT_GET, $param, FILTER_SANITIZE_SPECIAL_CHARS)
+            : null;
+    }
+    
+    public static function post($param) {
+        self::readInput();
+        return !empty(self::$input[$param]) ? self::$input[$param] 
+                : (!empty($_POST[$param]) 
+                    ? filter_input(INPUT_POST, $param, FILTER_SANITIZE_SPECIAL_CHARS)
+                    : null);
     }
    
 }

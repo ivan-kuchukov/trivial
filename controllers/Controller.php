@@ -13,7 +13,7 @@ class Controller {
             $$var = $value;
         }
         include ROOT_DIR . DIR_SEP . 'views' . DIR_SEP . $viewName . '.php';
-        
+        echo "<script>uid='".App::getUID()."'</script>";
         if ( App::params("debug") ) {
             // Debug Panel
             $debug['database'] = !is_null(App::db()) ? App::db()->statistics() : [];

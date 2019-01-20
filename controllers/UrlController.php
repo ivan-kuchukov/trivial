@@ -13,10 +13,13 @@ use trivial\models\Log;
  * @author Ivan Kuchukov <ivan.kuchukov@gmail.com>
  */
 class UrlController {
-    
+
     public function __construct() {
-        if(!empty($_GET['r'])) {
-            $url = "/".filter_input(INPUT_GET, 'r', FILTER_SANITIZE_SPECIAL_CHARS);
+        if(!empty(App::post('uid'))) {
+            App::setUID(App::post('uid'));
+        }
+        if(!empty(App::get('r'))) {
+            $url = "/".App::get('r');
         } else { // Pretty URL
             $uri = substr($_SERVER['REQUEST_URI'],0,strpos($_SERVER['REQUEST_URI'].'?','?'));
             $url = str_replace($_SERVER['BASE'], '', $uri);
