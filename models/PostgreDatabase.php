@@ -99,7 +99,7 @@ class PostgreDatabase implements DatabaseInterface {
                 Log::add("errorsFile",__METHOD__, $query . ". ERROR: " . $this->getError('description') );
             }
         } else if ( $this->queriesLog ) {
-            $text = $query . (!empty($vars) ? PHP_EOL . ' ' . json_encode($vars) : '' );
+            $text = $query . (!empty($vars) ? '. ' . json_encode($vars) : '' );
             Log::add("dbDebugFile",__METHOD__, $text);
         }
         return $this;

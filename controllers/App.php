@@ -77,15 +77,15 @@ class App {
 
     public static function get($param) {
         self::readInput();
-        return !empty($param) 
+        return isset($param) 
             ? filter_input(INPUT_GET, $param, FILTER_SANITIZE_SPECIAL_CHARS)
             : null;
     }
     
     public static function post($param) {
         self::readInput();
-        return !empty(self::$input[$param]) ? self::$input[$param] 
-                : (!empty($_POST[$param]) 
+        return isset(self::$input[$param]) ? self::$input[$param] 
+                : (isset($_POST[$param]) 
                     ? filter_input(INPUT_POST, $param, FILTER_SANITIZE_SPECIAL_CHARS)
                     : null);
     }
