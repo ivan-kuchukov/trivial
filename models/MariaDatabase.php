@@ -18,7 +18,7 @@ class MariaDatabase implements DatabaseInterface {
     private $errorQueriesCount = 0;
 
     public function __construct(array $dbOptions) {
-        if ($dbOptions['persistentConnection'] 
+        if (isset($dbOptions['persistentConnection']) && $dbOptions['persistentConnection'] 
                 && substr($dbOptions['servername'],0,2)!=="p:") {
             $dbOptions['servername']="p:".$dbOptions['servername'];
         }

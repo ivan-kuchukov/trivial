@@ -24,7 +24,7 @@ class PostgreDatabase implements DatabaseInterface {
             "user=" . $dbOptions['username'] . " " .
             "password=" . $dbOptions['password'] . " " .
             "dbname=" . $dbOptions['database'];
-        if ($dbOptions['persistentConnection']) {
+        if (isset($dbOptions['persistentConnection']) && $dbOptions['persistentConnection']) {
             @$this->connection = pg_pconnect($options);
         } else {
             @$this->connection = pg_connect($options);
