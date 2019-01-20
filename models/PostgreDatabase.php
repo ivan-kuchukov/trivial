@@ -60,8 +60,8 @@ class PostgreDatabase implements DatabaseInterface {
         return $this->errorLog;
     }
     
-    public function getResult() {
-        return $this->result;
+    public function getStatus() {
+        return $this->getError('code');
     }
 
     private function execWithoutBind(string $query) {

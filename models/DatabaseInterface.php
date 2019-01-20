@@ -36,9 +36,9 @@ interface DatabaseInterface {
      */
     public function getErrorMode();
     /** 
-     * Get result of query executing. Return true (success) or false (fail)
+     * Get status of query executing. Return true (success) or false (fail)
      */
-    public function getResult();
+    public function getStatus();
     /**
      * Execute query
      * @param string $query - SQL-query
