@@ -44,7 +44,7 @@ class UrlController {
                 Log::add("errorsFile",__METHOD__, "Controller $controllerName has no Index action");
             }
         } else {
-            Log::add("errorsFile",__METHOD__, "Controller $controllerName not found");
+            Log::add("errorsFile",__METHOD__, "Controller/action or path not found: " . $_SERVER['REQUEST_URI']);
         }
     }
 
