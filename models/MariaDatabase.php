@@ -90,15 +90,15 @@ class MariaDatabase implements DatabaseInterface {
     public function exec(string $query, array $vars=[]) {
         empty($vars) ? $this->execWithoutBind($query) : $this->execWithBind($query, $vars);
         $this->queriesCount++;
-        if ( ! $this->result ) {
+        if ( $this->getError('code') != 0 ) {
             $this->errorQueriesCount++;
             if ($this->errorLog=="display") {
-                echo 'Error in DB query: [' . $this->connection->errno . '] '
-                    . $this->connection->error . PHP_EOL;
+                echo 'Error in DB query: [' . $this->getError('code') . '] '
+                    . $this->getError('description') . PHP_EOL;
             }
             if ($this->errorLog=="log" || $this->errorLog=="display") {
-                Log::add("dbDebugFile",__METHOD__, $query . ". ERROR: " . $this->connection->error);
-                Log::add("errorsFile",__METHOD__, $query . ". ERROR: " . $this->connection->error);
+                Log::add("dbDebugFile",__METHOD__, $query . ". ERROR: " . $this->getError('description'));
+                Log::add("errorsFile",__METHOD__, $query . ". ERROR: " . $this->getError('description'));
             }
         } else if ( $this->queriesLog ) {
             $text = $query . (!empty($vars) ? PHP_EOL . ' ' . json_encode($vars) : '' );
