@@ -63,5 +63,9 @@ class App {
         }
         return self::$uid;
     }
+    
+    public static function setUID(string $uid) {
+        self::$uid = $uid;
+    }
    
 }
