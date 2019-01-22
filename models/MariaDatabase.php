@@ -90,6 +90,8 @@ class MariaDatabase implements DatabaseInterface {
     public function exec(string $query, array $vars=[]) {
         empty($vars) ? $this->execWithoutBind($query) : $this->execWithBind($query, $vars);
         $this->queriesCount++;
+        $query = str_replace(PHP_EOL,' ',$query);
+        $query = preg_replace('/[ ]+/',' ',$query);
         if ( $this->getError('code') != 0 ) {
             $this->errorQueriesCount++;
             if ($this->errorLog=="display") {

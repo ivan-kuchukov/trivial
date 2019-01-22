@@ -30,6 +30,7 @@ class UrlController {
         if (!empty($controllerName)) {
             $controllerNameLength = strlen($controllerName)+2;
             $actionName = 'action' . ucfirst(substr($url,$controllerNameLength,strpos($url."/","/",$controllerNameLength)-1));
+            $actionName = ($actionName!='action') ? $actionName : 'index';
         } else {
             $controllerName=ucfirst(App::params('defaultController'));
             $actionName='index';
