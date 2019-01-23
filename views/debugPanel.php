@@ -1,3 +1,4 @@
+<div id="trivial-debug-panel">
 <br>
 <div style="background-color:lavender;padding-left:1em; position:fixed;bottom:0;width:100%">
     Debug Panel.
@@ -14,5 +15,9 @@
             echo is_null($errors) ? '0' : $errors; ?>
         </span>
     </a>
-    
+    <span id="trivial-debug-panel-close" 
+          style="float:right;cursor:pointer;margin-right:0.5em;display:none;" 
+          onclick="document.getElementById('trivial-debug-panel').style.display='none'">X</span> 
 </div>
+</div>
+<script>document.getElementById('trivial-debug-panel-close').style.display='block'</script>
