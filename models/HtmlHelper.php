@@ -61,8 +61,9 @@ class HtmlHelper {
      * @param type $buttonsCount
      */
     public static function getPagination(array $opt,int $buttonsCount=9) {
+        $p=[];
         // Check and correct input
-        $opt['count']=!empty($opt['count']) ? $opt['count'] : $opt['start']+$opt['size']*$buttonsCount;
+        $opt['count']=!is_null($opt['count']) ? $opt['count'] : $opt['start']+$opt['size']*$buttonsCount;
         $buttonsCount=(ceil($opt['count']/$opt['size'])<$buttonsCount) ? ceil($opt['count']/$opt['size']) : $buttonsCount;
         $opt['size']=((int)$opt['size']>0) ? $opt['size'] : 10;
         // Button "Prev"
