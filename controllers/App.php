@@ -69,25 +69,25 @@ class App {
         self::$uid = $uid;
     }
     
-    private static function readInput() {
+    private static function readInput($param,$filter) {
         if(is_null(self::$input)) {
             self::$input = json_decode(file_get_contents('php://input'), true);
         }
+        return isset(self::$input[$param]) 
+            ? filter_var(self::$input[$param],$filter) 
+            : null;
     }
 
-    public static function get($param) {
-        self::readInput();
+    public static function get($param,$filter=FILTER_SANITIZE_SPECIAL_CHARS) {
         return isset($param) 
-            ? filter_input(INPUT_GET, $param, FILTER_SANITIZE_SPECIAL_CHARS)
+            ? filter_input(INPUT_GET, $param, $filter)
             : null;
     }
     
-    public static function post($param) {
-        self::readInput();
-        return isset(self::$input[$param]) ? self::$input[$param] 
-                : (isset($_POST[$param]) 
-                    ? filter_input(INPUT_POST, $param, FILTER_SANITIZE_SPECIAL_CHARS)
-                    : null);
+    public static function post($param,$filter=FILTER_SANITIZE_SPECIAL_CHARS) {
+        return (isset($_POST[$param])) 
+            ? filter_input(INPUT_POST, $param, $filter)
+            : self::readInput($param,$filter);
     }
    
 }
