@@ -13,6 +13,7 @@ use trivial\models\Log;
  * @author Ivan Kuchukov <ivan.kuchukov@gmail.com>
  */
 class UrlController {
+    private static $error404Page = ROOT_DIR . DIR_SEP . 'views' . DIR_SEP . 'error404.php';
 
     public function __construct() {
         if(!empty(App::post('uid'))) {
@@ -48,7 +49,11 @@ class UrlController {
                 Log::add("errorsFile",__METHOD__, "Controller $controllerName has no Index action");
             }
         } else {
-            Log::add("errorsFile",__METHOD__, "Controller/action or path not found: " . $_SERVER['REQUEST_URI']);
+            http_response_code(404);
+            if (file_exists(self::$error404Page)) {
+                include self::$error404Page;
+            }
+            die();
         }
     }
 
