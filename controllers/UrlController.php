@@ -2,6 +2,7 @@
 
 namespace trivial\controllers;
 use trivial\models\Log;
+use trivial\models\Translator;
 
 /**
  * UrlController - parse request and redirect to controller and action
@@ -18,6 +19,9 @@ class UrlController {
     public function __construct() {
         if(!empty(App::post('uid'))) {
             App::setUID(App::post('uid'));
+        }
+        if(!empty(App::get('lang')) || !empty(App::post('lang'))) {
+            Translator::setLanguage(App::get('lang') ?? App::post('lang'));
         }
         if(!empty(App::get('r'))) {
             $url = "/".App::get('r');
