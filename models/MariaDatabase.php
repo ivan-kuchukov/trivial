@@ -70,7 +70,36 @@ class MariaDatabase implements DatabaseInterface {
         $this->affectedRows = $this->connection->affected_rows;
     }
     
-    private function execWithBind(string $query, array $vars=[]) {
+    /**
+     * Modify query and binding variables to PostgreSQL style 
+     * @param string $query
+     * @param array $vars
+     * @return boolean
+     */
+    private function nameBind(string &$query, array &$vars) {
+        if (ArrayHelper::getType($vars)=='mixed') {
+            $this->connection->error='Incorrect type of variables.';
+            $this->connection->errno=-1;
+            return false;
+        } elseif (ArrayHelper::getType($vars)=='associative') {
+            foreach ($vars as $key=>$var) {
+                $pattern='~".*?"(*SKIP)(*FAIL)|\'.*?\'(*SKIP)(*FAIL)|\:' . preg_quote($key, '~') . '\b~s';
+                $matches=[];
+                preg_match_all($pattern,$query,$matches,PREG_OFFSET_CAPTURE);
+                $query=preg_replace($pattern, '?'.str_repeat(' ',strlen($key)), $query);
+                foreach ($matches[0] as $match) {
+                    $modifyVars[$match[1]]=$var;
+                }
+            }
+            $vars=$modifyVars;
+        }
+        return true;
+    }
+
+    private function execWithBind(string &$query, array &$vars=[]) {
+        if (!$this->nameBind($query,$vars)) {
+            return false;
+        }
         $types = '';
         $values = [];
         foreach ($vars as $var) {
@@ -109,6 +138,10 @@ class MariaDatabase implements DatabaseInterface {
         return $this;
     }
     
+    /**
+     * get last inserted id
+     * @return type
+     */
     public function getInsertId() {
         return $this->connection->insert_id;
     }
@@ -126,6 +159,9 @@ class MariaDatabase implements DatabaseInterface {
     
     private function fetchStmt() {
         $meta = $this->result->result_metadata(); 
+        if (!$meta) {
+            return false;
+        }
         while ($field = $meta->fetch_field()) 
         { 
             $params[] = &$row[$field->name];

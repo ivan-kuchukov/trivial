@@ -71,7 +71,38 @@ class PostgreDatabase implements DatabaseInterface {
         }
     }
     
-    private function execWithBind(string $query, array $vars=[]) {
+    /**
+     * Modify query and binding variables to MariaDB style
+     * @param string $query
+     * @param array $vars
+     * @return boolean
+     */
+    private function nameBind(string &$query, array &$vars) {
+        if (ArrayHelper::getType($vars)=='mixed') {
+            $this->connection->error='Incorrect type of variables.';
+            $this->connection->errno=-1;
+            return false;
+        } elseif (ArrayHelper::getType($vars)=='associative') {
+            $varNumber=1;
+            foreach ($vars as $key=>$var) {
+                $pattern='~".*?"(*SKIP)(*FAIL)|\'.*?\'(*SKIP)(*FAIL)|\:' . preg_quote($key, '~') . '\b~s';
+                $matches=[];
+                preg_match($pattern,$query,$matches,PREG_OFFSET_CAPTURE);
+                $query=preg_replace($pattern, 
+                    '\$'.(string)$varNumber.str_repeat(' ',strlen($key)-strlen((string)$varNumber))
+                    , $query);
+                $modifyVars[$varNumber]=$var;
+                $varNumber++;
+            }
+            $vars=$modifyVars;
+        }
+        return true;
+    }
+    
+    private function execWithBind(string &$query, array &$vars=[]) {
+        if (!$this->nameBind($query,$vars)) {
+            return false;
+        }
         $values = [];
         foreach ($vars as $var) {
             $values[] = is_array($var) ? $var[0] : $var;
@@ -104,10 +135,6 @@ class PostgreDatabase implements DatabaseInterface {
         }
         return $this;
     }
-    
-    /*public function getInsertId() {
-        return pg_last_oid($this->result);
-    }*/
     
     private function syncId($data,$syncId) {
         $result=[];
