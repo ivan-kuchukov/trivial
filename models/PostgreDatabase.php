@@ -107,9 +107,10 @@ class PostgreDatabase implements DatabaseInterface {
         foreach ($vars as $var) {
             $values[] = is_array($var) ? $var[0] : $var;
         }
-        $result = pg_prepare($this->connection,"",$query);
+        $result = @pg_prepare($this->connection,"",$query);
         if (!$result) {
-            return $result;
+            $this->result = false;
+            return false;
         }
         $this->result = @pg_execute($this->connection,"",$values);
         if ($this->result) {
@@ -118,7 +119,9 @@ class PostgreDatabase implements DatabaseInterface {
     }
 
     public function exec(string $query, array $vars=[]) {
-        empty($vars) ? $this->execWithoutBind($query) : $this->execWithBind($query, $vars);
+        empty($vars) 
+            ? $this->execWithoutBind($query) 
+            : $this->execWithBind($query, $vars);
         $this->queriesCount++;
         if ( ! $this->result ) {
             $this->errorQueriesCount++;
