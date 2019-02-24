@@ -10,14 +10,12 @@ namespace trivial\models;
 class DatabaseFactory {
     public static function create(array $dbOptions) {
         $db = false;
+        $type=strtolower($dbOptions['type']);
         if (strtolower($dbOptions['driver']) == 'pdo' ) {
             $db = new PDODatabase($dbOptions);
-        }
-        $type=strtolower($dbOptions['type']);
-        if ( $type == 'mysql' || $type == 'mariadb' ) {
+        } elseif ( $type == 'mysql' || $type == 'mariadb' ) {
             $db = new MariaDatabase($dbOptions);
-        }
-        if ( $type == 'postgresql' ) {
+        } elseif ( $type == 'postgresql' ) {
             $db = new PostgreDatabase($dbOptions);
         }
         return $db;
