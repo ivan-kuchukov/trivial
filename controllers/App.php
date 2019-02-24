@@ -47,7 +47,7 @@ class App {
     
     private static function createDb($name) {
         self::$db = DatabaseFactory::create(self::params($name));
-        if (self::$db->getError('connectionCode') !== 0) {
+        if (!self::$db || self::$db->getError('connectionCode') !== 0) {
             echo "Can't connect to DB";
             exit(1);
         }
