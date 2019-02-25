@@ -8,7 +8,7 @@ use trivial\controllers\App;
  *
  * @author Ivan Kuchukov <ivan.kuchukov@gmail.com>
  */
-class MariaDatabase implements DatabaseInterface {
+class MySQLDatabase implements DatabaseInterface {
     private $connection;
     private $query;
     private $result;

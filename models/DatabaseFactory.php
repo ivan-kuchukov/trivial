@@ -15,7 +15,7 @@ class DatabaseFactory {
         if ($driver == 'pdo' ) {
             $db = new PDODatabase($dbOptions);
         } elseif ( $type == 'mysql' || $type == 'mariadb' ) {
-            $db = new MariaDatabase($dbOptions);
+            $db = new MySQLDatabase($dbOptions);
         } elseif ( $type == 'postgresql' ) {
             $db = new PostgreDatabase($dbOptions);
         } else {
