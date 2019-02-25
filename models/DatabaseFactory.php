@@ -3,21 +3,24 @@
 namespace trivial\models;
 
 /**
- * Model for work with Database
+ * Factory for create model for Database
  *
  * @author Ivan Kuchukov <ivan.kuchukov@gmail.com>
  */
 class DatabaseFactory {
     public static function create(array $dbOptions) {
         $db = false;
-        $type=strtolower($dbOptions['type']);
-        if (strtolower($dbOptions['driver']) == 'pdo' ) {
+        $type = strtolower($dbOptions['type']);
+        $driver = strtolower($dbOptions['driver']);
+        if ($driver == 'pdo' ) {
             $db = new PDODatabase($dbOptions);
         } elseif ( $type == 'mysql' || $type == 'mariadb' ) {
             $db = new MariaDatabase($dbOptions);
         } elseif ( $type == 'postgresql' ) {
             $db = new PostgreDatabase($dbOptions);
+        } else {
+            return false;
         }
-        return $db;
+        return new ProxyMethodWrapper($db,new DatabaseLogger($db));
     }
 }

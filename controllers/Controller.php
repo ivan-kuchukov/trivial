@@ -16,7 +16,7 @@ class Controller {
         echo "<script>uid='".App::getUID()."'</script>";
         if ( App::params("debug") ) {
             // Debug Panel
-            $debug['database'] = !is_null(App::db()) ? App::db()->statistics() : [];
+            $debug['database'] = App::db()->statistics() ?? [];
             include App::getPath() . 'views' . DIR_SEP . 'debugPanel.php';
         }
     }

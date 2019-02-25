@@ -10,20 +10,15 @@ use trivial\controllers\App;
  */
 class MariaDatabase implements DatabaseInterface {
     private $connection;
+    private $query;
     private $result;
     private $affectedRows;
-    private $errorLog;
-    private $queriesLog;
-    private $queriesCount = 0;
-    private $errorQueriesCount = 0;
 
     public function __construct(array $dbOptions) {
         if (isset($dbOptions['persistentConnection']) && $dbOptions['persistentConnection'] 
                 && substr($dbOptions['servername'],0,2)!=="p:") {
             $dbOptions['servername']="p:".$dbOptions['servername'];
         }
-        $this->errorLog = App::params('db.errorLog');
-        $this->queriesLog = App::params('db.queriesLog');
         @$this->connection = new \mysqli(
             $dbOptions['servername'], 
             $dbOptions['username'], 
@@ -39,6 +34,10 @@ class MariaDatabase implements DatabaseInterface {
         }
     }
     
+    public function getQuery() {
+        return $this->query;
+    }
+    
     public function getError($key=null) {
         $error=[
             'connectionDescription'=>$this->connection->connect_error,
@@ -51,14 +50,6 @@ class MariaDatabase implements DatabaseInterface {
             $error['code']=$this->connection->errno;
         }
         return ($key===null) ? $error : $error[$key];
-    }
-    
-    public function setErrorMode($errorLog) {
-        $this->errorLog = $errorLog;
-    }
-    
-    public function getErrorMode() {
-        return $this->errorLog;
     }
     
     public function getStatus() {
@@ -117,24 +108,10 @@ class MariaDatabase implements DatabaseInterface {
     }
 
     public function exec(string $query, array $vars=[]) {
+        $this->query = $query;
         empty($vars) ? $this->execWithoutBind($query) : $this->execWithBind($query, $vars);
-        $this->queriesCount++;
         $query = str_replace(PHP_EOL,' ',$query);
         $query = preg_replace('/[ ]+/',' ',$query);
-        if ( $this->getError('code') != 0 ) {
-            $this->errorQueriesCount++;
-            if ($this->errorLog=="display") {
-                echo 'Error in DB query: [' . $this->getError('code') . '] '
-                    . $this->getError('description') . PHP_EOL;
-            }
-            if ($this->errorLog=="log" || $this->errorLog=="display") {
-                Log::add("dbDebugFile",__METHOD__, $query . ". ERROR: " . $this->getError('description'));
-                Log::add("errorsFile",__METHOD__, $query . ". ERROR: " . $this->getError('description'));
-            }
-        } else if ( $this->queriesLog ) {
-            $text = $query . (!empty($vars) ? '. ' . json_encode($vars) : '' );
-            Log::add("dbDebugFile",__METHOD__, $text);
-        }
         return $this;
     }
     
@@ -206,10 +183,6 @@ class MariaDatabase implements DatabaseInterface {
         }
         $data = $this->fetch();
         $data = (!is_null($syncId)) ? $this->syncId($data,$syncId) : $data;
-        $text = (count($data)>0 ? count($data) . ' rows: ' . json_encode(current($data)) . ',...' : '[]');
-        if ($this->queriesLog) {
-            Log::add("dbDebugFile",__METHOD__, $text);
-        }
         return $data;
     }
     
@@ -219,9 +192,6 @@ class MariaDatabase implements DatabaseInterface {
         }
         $data = $this->fetch();
         $data = isset($data[0]) ? $data[0] : null;
-        if ($this->queriesLog) {
-            Log::add("dbDebugFile",__METHOD__, json_encode($data));
-        }
         return $data;
     }
     
@@ -231,9 +201,6 @@ class MariaDatabase implements DatabaseInterface {
         }
         $data = $this->fetch();
         $data = isset($data[0]) ? $data[0][key($data[0])] : null;
-        if ($this->queriesLog) {
-            Log::add("dbDebugFile",__METHOD__, (is_null($data) ? 'null' : $data));
-        }
         return $data;
     }
     
@@ -241,7 +208,8 @@ class MariaDatabase implements DatabaseInterface {
         if ($this->connection->begin_transaction($flags)) {
             return true;
         } else {
-            Log::add("errorsFile",__METHOD__, 'Transaction begin fail');
+            $this->error['description'] = 'Transaction begin fail';
+            $this->error['code'] = 'UE-1';
             return false;
         }
     }
@@ -250,7 +218,8 @@ class MariaDatabase implements DatabaseInterface {
         if ($this->connection->commit()) {
             return true;
         } else {
-            Log::add("errorsFile",__METHOD__, 'Transaction commit fail');
+            $this->error['description'] = 'Transaction commit fail';
+            $this->error['code'] = 'UE-2';
             return false;
         }
     }
@@ -259,16 +228,10 @@ class MariaDatabase implements DatabaseInterface {
         if ($this->connection->rollback()) {
             return true;
         } else {
-            Log::add("errorsFile",__METHOD__, 'Transaction rollback fail');
+            $this->error['description'] = 'Transaction rollback fail';
+            $this->error['code'] = 'UE-3';
             return false;
         }
-    }
-    
-    public function statistics() {
-        return [
-            'queriesCount' => $this->queriesCount,
-            'errorQueriesCount' => $this->errorQueriesCount,
-        ];
     }
     
 }

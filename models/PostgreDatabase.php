@@ -10,16 +10,11 @@ use trivial\controllers\App;
  */
 class PostgreDatabase implements DatabaseInterface {
     private $connection;
+    private $query;
     private $result;
     private $affectedRows;
-    private $errorLog;
-    private $queriesLog;
-    private $queriesCount = 0;
-    private $errorQueriesCount = 0;
 
     public function __construct(array $dbOptions) {
-        $this->errorLog = App::params('db.errorLog');
-        $this->queriesLog = App::params('db.queriesLog');
         $options ="host=" . $dbOptions['servername'] . " " .
             "user=" . $dbOptions['username'] . " " .
             "password=" . $dbOptions['password'] . " " .
@@ -38,6 +33,10 @@ class PostgreDatabase implements DatabaseInterface {
         }
     }
     
+    public function getQuery() {
+        return $this->query;
+    }
+    
     public function getError($key=null) {
         $error=[
             'connectionDescription'=>pg_connection_status($this->connection)===PGSQL_CONNECTION_OK ? 'Ok' : 'Fail',
@@ -51,15 +50,7 @@ class PostgreDatabase implements DatabaseInterface {
         }
         return ($key===null) ? $error : $error[$key];
     }
-    
-    public function setErrorMode($errorLog) {
-        $this->errorLog = $errorLog;
-    }
-    
-    public function getErrorMode() {
-        return $this->errorLog;
-    }
-    
+ 
     public function getStatus() {
         return $this->getError('code');
     }
@@ -119,10 +110,11 @@ class PostgreDatabase implements DatabaseInterface {
     }
 
     public function exec(string $query, array $vars=[]) {
+        $this->query = $query;
         empty($vars) 
             ? $this->execWithoutBind($query) 
             : $this->execWithBind($query, $vars);
-        $this->queriesCount++;
+        /*$this->queriesCount++;
         if ( ! $this->result ) {
             $this->errorQueriesCount++;
             if ($this->errorLog=="display") {
@@ -135,7 +127,7 @@ class PostgreDatabase implements DatabaseInterface {
         } else if ( $this->queriesLog ) {
             $text = $query . (!empty($vars) ? '. ' . json_encode($vars) : '' );
             Log::add("dbDebugFile",__METHOD__, $text);
-        }
+        }*/
         return $this;
     }
     
@@ -163,10 +155,6 @@ class PostgreDatabase implements DatabaseInterface {
         $data = pg_fetch_all($this->result);
         $data = (!is_null($syncId)) ? $this->syncId($data,$syncId) : $data;
         $data = $data ?: [];
-        $text = ( count($data)>0 ? count($data) . ' rows: ' . json_encode(current($data)) . ',...' : '[]');
-        if ($this->queriesLog) {
-            Log::add("dbDebugFile",__METHOD__, $text);
-        }
         return $data;
     }
     
@@ -176,9 +164,6 @@ class PostgreDatabase implements DatabaseInterface {
         }
         $data = pg_fetch_all($this->result);
         $data = isset($data[0]) ? $data[0] : null;
-        if ($this->queriesLog) {
-            Log::add("dbDebugFile",__METHOD__, json_encode($data));
-        }
         return $data;
     }
     
@@ -188,9 +173,6 @@ class PostgreDatabase implements DatabaseInterface {
         }
         $data = pg_fetch_row($this->result);
         $data = isset($data[0]) ? $data[0] : null;
-        if ($this->queriesLog) {
-            Log::add("dbDebugFile",__METHOD__, (is_null($data) ? 'null' : $data));
-        }
         return $data;
     }
     
@@ -198,7 +180,8 @@ class PostgreDatabase implements DatabaseInterface {
         if (pg_query($this->connection,"BEGIN")) {
             return true;
         } else {
-            Log::add("errorsFile",__METHOD__, 'Transaction begin fail');
+            $this->error['description'] = 'Transaction begin fail';
+            $this->error['code'] = 'UE-1';
             return false;
         }
     }
@@ -207,7 +190,8 @@ class PostgreDatabase implements DatabaseInterface {
         if (pg_query($this->connection,"COMMIT")) {
             return true;
         } else {
-            Log::add("errorsFile",__METHOD__, 'Transaction commit fail');
+            $this->error['description'] = 'Transaction commit fail';
+            $this->error['code'] = 'UE-2';
             return false;
         }
     }
@@ -216,16 +200,10 @@ class PostgreDatabase implements DatabaseInterface {
         if (pg_query($this->connection,"ROLLBACK")) {
             return true;
         } else {
-            Log::add("errorsFile",__METHOD__, 'Transaction rollback fail');
+            $this->error['description'] = 'Transaction rollback fail';
+            $this->error['code'] = 'UE-3';
             return false;
         }
     }
-    
-    public function statistics() {
-        return [
-            'queriesCount' => $this->queriesCount,
-            'errorQueriesCount' => $this->errorQueriesCount,
-        ];
-    }
-    
+ 
 }

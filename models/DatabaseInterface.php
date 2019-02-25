@@ -22,19 +22,15 @@ interface DatabaseInterface {
     public function __destruct();
 
     /**
+     * Get last query
+     */
+    public function getQuery();
+
+    /**
      * Get errors codes and describes array. 
      * @param type $key - if is not null, get key from array
      */
     public function getError($key);
-    /**
-     * Set error mode for queries
-     * @param type $errorMode - debug, log, ignore
-     */
-    public function setErrorMode($errorMode);
-    /**
-     * Get error mode (see setErrorMode())
-     */
-    public function getErrorMode();
     /** 
      * Get status of query executing. Return true (success) or false (fail)
      */

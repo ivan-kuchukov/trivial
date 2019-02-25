@@ -37,4 +37,5 @@ class Log {
                 ? self::$rows 
                 : ( isset(self::$rows[$type]) ? self::$rows[$type] : null );
     }
+    
 }
