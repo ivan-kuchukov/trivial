@@ -32,7 +32,7 @@ class DatabaseLogger extends Log {
     
     public function beforeMethod($name,$arguments,$result=null) {
         if (in_array($name,$this->replacedMethods)) {
-            $this->$name($arguments);
+            return $this->$name($arguments);
         } else {
             return true;
         }
@@ -54,7 +54,7 @@ class DatabaseLogger extends Log {
         return $this->errorLog;
     }
 
-    public function afterMethod($name,$arguments,&$result=null) {
+    public function afterMethod($name,$arguments,$result=null) {
         if(in_array($name,$this->logQuery)) {
             $this->logQuery($name,$arguments,$result);
         }

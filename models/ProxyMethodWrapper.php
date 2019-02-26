@@ -30,7 +30,7 @@ class ProxyMethodWrapper {
         return is_object($result) ? $this : $result;
     }
     
-    private function wrapperMethod($wrapperMethod,$name,$arguments,&$result=null) {
+    private function wrapperMethod($wrapperMethod,$name,$arguments,$result=null) {
         if (method_exists($this->wrapperClass,$wrapperMethod))  {
             if(is_object($this->wrapperClass)) {
                 return $this->wrapperClass->$wrapperMethod($name,$arguments,$result);
