@@ -17,8 +17,10 @@ class DatabaseLogger extends Log {
     // count of queries and error queries
     private $queriesCount = 0;
     private $errorQueriesCount = 0;
-    // Set error mode for queries (debug, log, ignore)
+    // set error mode for queries (debug, log, ignore)
     private $errorLog;
+    // replaced methods
+    private $replacedMethods = ['statistics','setErrorMode','getErrorMode'];
 
     /**
      * 
@@ -29,23 +31,30 @@ class DatabaseLogger extends Log {
     }
     
     public function beforeMethod($name,$arguments,$result=null) {
-        if($name=='statistics') {
-            $stat = [
-                'errorQueriesCount' => $this->errorQueriesCount,
-                'queriesCount' => $this->queriesCount,
-            ];
-            return (isset($arguments[0]) && isset($stat[$arguments[0]]))
-                ? $stat[$arguments[0]] : $stat;
-        } elseif($name=='setErrorMode') {
-            $this->errorLog = $arguments[0];
-        } elseif($name=='getErrorMode') {
-            return $this->errorLog;
+        if (in_array($name,$this->replacedMethods)) {
+            $this->$name($arguments);
         } else {
             return true;
         }
     }
 
-    public function afterMethod($name,$arguments,$result=null) {
+    private function statistics($arguments) {
+        $stat = [
+            'errorQueriesCount' => $this->errorQueriesCount,
+            'queriesCount' => $this->queriesCount,
+        ];
+        return (isset($arguments[0]) && isset($stat[$arguments[0]])) ? $stat[$arguments[0]] : $stat;
+    }
+
+    private function setErrorMode($arguments) {
+        $this->errorLog = $arguments[0];
+    }
+
+    private function getErrorMode($arguments) {
+        return $this->errorLog;
+    }
+
+    public function afterMethod($name,$arguments,&$result=null) {
         if(in_array($name,$this->logQuery)) {
             $this->logQuery($name,$arguments,$result);
         }
@@ -88,7 +97,7 @@ class DatabaseLogger extends Log {
                     $text = json_encode($result);
                 }
             } else {
-                $text = is_null($data) ? 'null' : $data;
+                $text = is_null($result) ? 'null' : $result;
             }
             $method = get_class($this->db) . '->' . $name;
             self::add("dbDebugFile",$method, $text);

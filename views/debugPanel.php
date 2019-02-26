@@ -11,7 +11,7 @@
     <a href="<?= $_SERVER['BASE'] ?>/log/errors?uid=<?= trivial\controllers\App::getUID() ?>" target="_blank">
         Errors:
         <span style="color:red">
-        <?php $errors = trivial\models\Log::statistics('errorsFile');
+        <?php $errors = trivial\models\Log::addedCount('errorsFile');
             echo is_null($errors) ? '0' : $errors; ?>
         </span>
     </a>

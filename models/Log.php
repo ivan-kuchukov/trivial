@@ -32,7 +32,7 @@ class Log {
      * Statistics
      * @return type
      */
-    public static function statistics(string $type=null) {
+    public static function addedCount(string $type=null) {
         return is_null($type) 
                 ? self::$rows 
                 : ( isset(self::$rows[$type]) ? self::$rows[$type] : null );

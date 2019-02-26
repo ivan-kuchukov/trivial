@@ -8,7 +8,7 @@ use trivial\controllers\App;
  *
  * @author Ivan Kuchukov <ivan.kuchukov@gmail.com>
  */
-class PostgreDatabase implements DatabaseInterface {
+class PostgreSQLDatabase implements DatabaseInterface {
     private $connection;
     private $query;
     private $result;

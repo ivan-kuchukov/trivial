@@ -20,25 +20,6 @@ class ProxyMethodWrapper {
         $this->mainClass = $mainClass;
         $this->wrapperClass = $wrapperClass;
     }
-    
-    public function __set($name, $value) {
-        $this->wrapperProperty('set',$name,$value);
-    }
-    
-    public function __get($name) {
-        $this->wrapperProperty('get',$name);
-    }
-    
-    private function wrapperProperty($wrapperProperty,$name,$value=null) {
-        if (method_exists($this->wrapperClass,$wrapperProperty))  {
-            if(is_object($this->wrapperClass)) {
-                return $this->wrapperClass->$wrapperMethod($name,$arguments,$result);
-            } elseif(is_string($this->wrapperClass)) {
-                return $this->wrapperClass::$wrapperMethod($name,$arguments,$result);
-            }
-        }
-        return false;
-    }
 
     public function __call($name, $arguments) {
         $result = $this->wrapperMethod('beforeMethod',$name, $arguments);
@@ -49,7 +30,7 @@ class ProxyMethodWrapper {
         return is_object($result) ? $this : $result;
     }
     
-    private function wrapperMethod($wrapperMethod,$name,$arguments,$result=null) {
+    private function wrapperMethod($wrapperMethod,$name,$arguments,&$result=null) {
         if (method_exists($this->wrapperClass,$wrapperMethod))  {
             if(is_object($this->wrapperClass)) {
                 return $this->wrapperClass->$wrapperMethod($name,$arguments,$result);

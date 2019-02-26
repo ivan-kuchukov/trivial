@@ -17,7 +17,7 @@ class DatabaseFactory {
         } elseif ( $type == 'mysql' || $type == 'mariadb' ) {
             $db = new MySQLDatabase($dbOptions);
         } elseif ( $type == 'postgresql' ) {
-            $db = new PostgreDatabase($dbOptions);
+            $db = new PostgreSQLDatabase($dbOptions);
         } else {
             return false;
         }
