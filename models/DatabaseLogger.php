@@ -18,7 +18,7 @@ class DatabaseLogger extends Log {
     private $queriesCount = 0;
     private $errorQueriesCount = 0;
     // set error mode for queries (debug, log, ignore)
-    private $errorLog;
+    public $errorLog;
     // replaced methods
     private $replacedMethods = ['statistics','setErrorMode','getErrorMode'];
 
@@ -29,16 +29,8 @@ class DatabaseLogger extends Log {
     public function __construct($db) {
         $this->db = $db;
     }
-    
-    public function beforeMethod($name,$arguments,$result=null) {
-        if (in_array($name,$this->replacedMethods)) {
-            return $this->$name($arguments);
-        } else {
-            return true;
-        }
-    }
 
-    private function statistics($arguments) {
+    public function statistics($arguments=null) {
         $stat = [
             'errorQueriesCount' => $this->errorQueriesCount,
             'queriesCount' => $this->queriesCount,
@@ -46,29 +38,11 @@ class DatabaseLogger extends Log {
         return (isset($arguments[0]) && isset($stat[$arguments[0]])) ? $stat[$arguments[0]] : $stat;
     }
 
-    private function setErrorMode($arguments) {
-        $this->errorLog = $arguments[0];
-    }
-
-    private function getErrorMode($arguments) {
-        return $this->errorLog;
-    }
-
-    public function afterMethod($name,$arguments,$result=null) {
-        if(in_array($name,$this->logQuery)) {
-            $this->logQuery($name,$arguments,$result);
-        }
-        if(in_array($name,$this->logResult)) {
-            $this->logResult($name,$arguments,$result);
-        }
-        return true;
-    }
-    
-    private function logQuery($name,$arguments,$result) {
+    public function logQuery($name,$arguments,$result) {
         $errorLog = App::params('db.errorLog');
         $queriesLog = App::params('db.queriesLog');
         $query = $this->db->getQuery();
-        $method = get_class($this->db) . '->' . $name;
+        $method = get_parent_class($this->db) . '->' . $name;
         $this->queriesCount++;
         if ( !$this->db->getStatus() ) {
             $this->errorQueriesCount++;
@@ -81,12 +55,12 @@ class DatabaseLogger extends Log {
                 self::add("errorsFile",$method, $query . ". ERROR: " . $this->db->getError('description'));
             }
         } else if ( $queriesLog ) {
-            $text = $query . (!empty($vars) ? '. ' . json_encode($vars) : '' );
+            $text = $query . (!empty($arguments) ? '. ' . json_encode($arguments) : '' );
             self::add("dbDebugFile",$method, $text);
         }
     }
     
-    private function logResult($name,$arguments,$result) {
+    public function logResult($name,$arguments,$result) {
         if (App::params('db.queriesLog')) {
             if (is_array($result)) {
                 if (isset($result[0])) {
@@ -99,7 +73,7 @@ class DatabaseLogger extends Log {
             } else {
                 $text = is_null($result) ? 'null' : $result;
             }
-            $method = get_class($this->db) . '->' . $name;
+            $method = get_parent_class($this->db) . '->' . $name;
             self::add("dbDebugFile",$method, $text);
         }
         

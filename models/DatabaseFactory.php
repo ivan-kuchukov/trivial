@@ -13,14 +13,15 @@ class DatabaseFactory {
         $type = strtolower($dbOptions['type']);
         $driver = strtolower($dbOptions['driver']);
         if ($driver == 'pdo' ) {
-            $db = new PDODatabase($dbOptions);
+            $db = new PDODatabaseWithLog($dbOptions);
         } elseif ( $type == 'mysql' || $type == 'mariadb' ) {
-            $db = new MySQLDatabase($dbOptions);
+            $db = new MySQLDatabaseWithLog($dbOptions);
         } elseif ( $type == 'postgresql' ) {
-            $db = new PostgreSQLDatabase($dbOptions);
+            $db = new PostgreSQLDatabaseWithLog($dbOptions);
         } else {
             return false;
         }
-        return new ProxyMethodWrapper($db,new DatabaseLogger($db));
+        $db->logger = new DatabaseLogger($db);
+        return $db;
     }
 }

@@ -25,8 +25,10 @@ class PDODatabase implements DatabaseInterface {
         'mariadb'=>'mysql',
         'postgresql'=>'pgsql',
     ];
+    public $fetch;
 
     public function __construct(array $dbOptions) {
+        $this->fetch = App::params('db.pdoFetch');
         $type = $this->type[strtolower($dbOptions['type'])] ?? 'mysql';
         try {
             $this->connection = new \PDO(
@@ -72,32 +74,44 @@ class PDODatabase implements DatabaseInterface {
     
     private function execWithBind(string $query, array $vars=[]) {
         $this->resultType = 'prepare';
-        $modifyVars=[];
+        $this->result = $this->connection->prepare($query);
+        $params=[];
         foreach ($vars as $key=>$var) {
             if (is_array($var)) {
                 switch (substr($var[1],0,1)) {
+                    case 'b':
+                        $type = \PDO::PARAM_BOOL;
+                        break;
                     case 'i':
-                        $modifyVars[$key]=(int)$var[0];
+                        $type = \PDO::PARAM_INT;
                         break;
                     case 's':
-                        $modifyVars[$key]=(string)$var[0];
-                        break;
                     default:
-                        $modifyVars[$key]=$var[0];
+                        $type = \PDO::PARAM_STR;
+                        break;
                 }
+                $var=$var[0];
             } else {
-                $modifyVars[$key]=$var;
+                if (is_bool($var)) {
+                    $type = \PDO::PARAM_BOOL;
+                } elseif (is_numeric($var)) {
+                    $type = \PDO::PARAM_INT;
+                } else {
+                    $type = \PDO::PARAM_STR;
+                }
             }
+            $params[$key]=$var;
+            $this->result->bindParam(':'.$key, $params[$key], $type);
         }
-        $this->result = $this->connection->prepare($query);
-        $this->result->execute($modifyVars);
+        $this->result->execute();
         //$this->affectedRows = $this->connection->rowCount();
     }
     
     public function exec(string $query, array $vars=[]) {
-        empty($vars) ? $this->execWithoutBind($query) : $this->execWithBind($query, $vars);
         $query = str_replace(PHP_EOL,' ',$query);
         $query = preg_replace('/[ ]+/',' ',$query);
+        $this->query = $query;
+        empty($vars) ? $this->execWithoutBind($query) : $this->execWithBind($query, $vars);
         return $this;
     }
     
@@ -109,7 +123,7 @@ class PDODatabase implements DatabaseInterface {
             }
             return $data;
         } else {
-            return $this->result->fetchAll();
+            return $this->result->fetchAll($this->fetch);
         }
     }
     
