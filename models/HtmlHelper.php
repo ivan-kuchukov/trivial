@@ -60,7 +60,7 @@ class HtmlHelper {
      *              $opt['count'] - count of all elements
      * @param type $buttonsCount
      */
-    public static function getPagination(array $opt,int $buttonsCount=9) {
+    public static function getPagination(array $opt, $buttonsCount=9) {
         $p=[];
         // Check and correct input
         $opt['count']=!is_null($opt['count']) ? $opt['count'] : $opt['start']+$opt['size']*$buttonsCount;
@@ -75,9 +75,8 @@ class HtmlHelper {
         if ( ($opt['start']-$opt['size']*$pLeft)<1 ) {
             $pLeft=floor($opt['start']/$opt['size']);
         } elseif ( ($opt['start']+$opt['size']*$pRight)>$opt['count'] ) {
-            $pLeft=$buttonsCount-1-(floor($opt['count']/$opt['size'])-floor($opt['start']/$opt['size']));
+            $pLeft=$buttonsCount-1-(ceil($opt['count']/$opt['size'])-ceil($opt['start']/$opt['size']));
         }
-        $n=1;
         for ($i=0;$i<$buttonsCount;$i++) {
             $pos=$opt['start']+$opt['size']*($i-$pLeft);
             $p[floor($pos/$opt['size'])+1]=$pos;
