@@ -10,16 +10,13 @@ use trivial\models\Database;
  * @author Ivan Kuchukov <ivan.kuchukov@gmail.com>
  */
 class PDODatabase extends Database implements DatabaseInterface {
-    private $connection;
     private $error=[
         'connectionDescription'=>0,
         'connectionCode'=>0,
         'description'=>0,
         'code'=>0,
     ];
-    private $result;
     private $resultType;
-    private $affectedRows;
     private $type = [
         'mysql'=>'mysql',
         'mariadb'=>'mysql',
@@ -75,7 +72,7 @@ class PDODatabase extends Database implements DatabaseInterface {
     private function execWithoutBind(string $query) {
         $this->resultType = 'query';
         $this->result = $this->connection->query($query);
-        //$this->affectedRows = $this->connection->rowCount();
+        $this->affectedRows = $this->result->rowCount();
     }
     
     private function execWithBind(string $query, array $vars=[]) {
@@ -110,7 +107,7 @@ class PDODatabase extends Database implements DatabaseInterface {
             $this->result->bindParam(':'.$key, $params[$key], $type);
         }
         $this->result->execute();
-        //$this->affectedRows = $this->connection->rowCount();
+        $this->affectedRows = $this->result->rowCount();
     }
     
     public function exec(string $query, array $vars=[]) {

@@ -8,6 +8,9 @@ namespace trivial\models;
  * @author Ivan Kuchukov <ivan.kuchukov@gmail.com>
  */
 abstract class Database implements DatabaseInterface {
+    protected $connection;
+    protected $result;
+    protected $affectedRows;
     /**
      * Text of SQL query
      */
@@ -17,19 +20,8 @@ abstract class Database implements DatabaseInterface {
      */
     protected $attributes = [
         self::ATTR_ERRMODE=>self::ERRMODE_WARNING,
-        self::ATTR_CASE=>self::CASE_NATURAL,
         self::ATTR_DEFAULT_FETCH_MODE=>self::FETCH_ASSOC,
     ];
-    /**
-     * ATTR_CASE - Force column names to a specific case.
-     *   CASE_LOWER   - Force column names to lower case.
-     *   CASE_NATURAL - Leave column names as returned by the database driver.
-     *   CASE_UPPER   - Force column names to upper case.
-     */
-    const ATTR_CASE = 8;
-    const CASE_NATURAL = 0;
-    const CASE_UPPER = 1;
-    const CASE_LOWER = 2;
     /**
      * ATTR_ERRMODE - Set mode errors showing:
      *   ERRMODE_SILENT    - don't show any errors
@@ -131,6 +123,30 @@ abstract class Database implements DatabaseInterface {
         } elseif ($attrErrMode == Database::ERRMODE_WARNING) {
             trigger_error($errMessage, E_USER_WARNING);
         }
+    }
+    
+    /**
+     * Get affected rows in last SQL query
+     * @return type
+     */
+    public function getAffectedRows() {
+        return $this->affectedRows;
+    }
+    
+    /**
+     * Access to connection object for manual manipulation
+     * @return type
+     */
+    public function connection() {
+        return $this->connection;
+    }
+    
+    /**
+     * Access to result object for manual manipulation
+     * @return type
+     */
+    public function result() {
+        return $this->result;
     }
     
 }

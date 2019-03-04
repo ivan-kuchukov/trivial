@@ -10,10 +10,7 @@ use trivial\models\Database;
  * @author Ivan Kuchukov <ivan.kuchukov@gmail.com>
  */
 class PostgreSQLDatabase extends Database implements DatabaseInterface {
-    private $connection;
-    private $result;
-    private $affectedRows;
-    protected $resultType = [
+    protected $fetchType = [
         Database::FETCH_ASSOC=>PGSQL_ASSOC,
         Database::FETCH_NUM=>PGSQL_NUM,
         Database::FETCH_BOTH=>PGSQL_BOTH,
@@ -138,7 +135,7 @@ class PostgreSQLDatabase extends Database implements DatabaseInterface {
             return false;
         }
         $data = pg_fetch_all($this->result
-            ,$this->resultType[$this->attributes[Database::ATTR_DEFAULT_FETCH_MODE]]);
+            ,$this->fetchType[$this->attributes[Database::ATTR_DEFAULT_FETCH_MODE]]);
         $data = (!is_null($syncId)) ? $this->syncId($data,$syncId) : $data;
         return $data ?: [];
     }
@@ -148,7 +145,7 @@ class PostgreSQLDatabase extends Database implements DatabaseInterface {
             return false;
         }
         $data = pg_fetch_array($this->result, null
-            ,$this->resultType[$this->attributes[Database::ATTR_DEFAULT_FETCH_MODE]]);
+            ,$this->fetchType[$this->attributes[Database::ATTR_DEFAULT_FETCH_MODE]]);
         return !is_bool($data) ? $data : null;
     }
     
@@ -191,4 +188,7 @@ class PostgreSQLDatabase extends Database implements DatabaseInterface {
         }
     }
  
+    public function getAffectedRows() {
+        return $this->affectedRows;
+    }
 }

@@ -10,10 +10,7 @@ use trivial\models\Database;
  * @author Ivan Kuchukov <ivan.kuchukov@gmail.com>
  */
 class MySQLDatabase extends Database {
-    protected $connection;
-    protected $result;
-    protected $affectedRows;
-    protected $resultType = [
+    protected $fetchType = [
         Database::FETCH_ASSOC=>MYSQLI_ASSOC,
         Database::FETCH_NUM=>MYSQLI_NUM,
         Database::FETCH_BOTH=>MYSQLI_BOTH,
@@ -137,7 +134,7 @@ class MySQLDatabase extends Database {
         if ( is_object($this->result) && property_exists($this->result, 'num_rows') 
                 && $this->result->num_rows > 0 ) {
             while ($row = $this->result->fetch_array(
-                    $this->resultType[$this->attributes[Database::ATTR_DEFAULT_FETCH_MODE]]
+                    $this->fetchType[$this->attributes[Database::ATTR_DEFAULT_FETCH_MODE]]
             )) {
                 if (!$all) {
                     $result = $row;
@@ -242,12 +239,4 @@ class MySQLDatabase extends Database {
         }
     }
     
-    /**
-     * Access to mysqli connection variable
-     * @return type
-     */
-    public function connection() {
-        return $this->connection;
-    }
-
 }
