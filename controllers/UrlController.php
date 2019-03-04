@@ -14,8 +14,14 @@ use trivial\models\Translator;
  * @author Ivan Kuchukov <ivan.kuchukov@gmail.com>
  */
 class UrlController {
+    /**
+     * @var string - path to 404 error page
+     */
     private static $error404Page = ROOT_DIR . DIR_SEP . 'views' . DIR_SEP . 'error404.php';
 
+    /**
+     * UrlController constructor. Parse URL and run chosen controller/method
+     */
     public function __construct() {
         if(!empty(App::post('uid'))) {
             App::setUID(App::post('uid'));

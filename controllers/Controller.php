@@ -8,6 +8,12 @@ namespace trivial\controllers;
  * @author Ivan Kuchukov <ivan.kuchukov@gmail.com>
  */
 class Controller {
+
+    /**
+     * Rendering template
+     * @param $viewName
+     * @param array $properties
+     */
     protected function render($viewName,$properties=[]) {
         foreach ($properties as $var=>$value) {
             $$var = $value;

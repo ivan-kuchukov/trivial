@@ -52,13 +52,15 @@ class HtmlHelper {
     }
 
     /**
+     *
      * Get array with pagination info
-     * 
-     * @param type $opt - array
+     *
+     * @param array $opt - array
      *              $opt['start'] - start element for current page
      *              $opt['size']  - size of elements on one page
      *              $opt['count'] - count of all elements
-     * @param type $buttonsCount
+     * @param int $buttonsCount
+     * @return array
      */
     public static function getPagination(array $opt, $buttonsCount=9) {
         $p=[];
