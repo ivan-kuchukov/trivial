@@ -209,8 +209,7 @@ class MySQLDatabase extends Database {
             return false;
         }
         $data = $this->fetch(false);
-        $data = $data[key($data)];
-        return $data;
+        return is_array($data) ? $data[key($data)] : null;
     }
     
     public function transaction($flags=MYSQLI_TRANS_START_WITH_CONSISTENT_SNAPSHOT) {
