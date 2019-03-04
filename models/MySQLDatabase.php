@@ -2,19 +2,25 @@
 
 namespace trivial\models;
 use trivial\controllers\App;
+use trivial\models\Database;
 
 /**
  * Model for work with Database
  *
  * @author Ivan Kuchukov <ivan.kuchukov@gmail.com>
  */
-class MySQLDatabase implements DatabaseInterface {
-    private $connection;
-    private $query;
-    private $result;
-    private $affectedRows;
+class MySQLDatabase extends Database {
+    protected $connection;
+    protected $result;
+    protected $affectedRows;
+    protected $resultType = [
+        Database::FETCH_ASSOC=>MYSQLI_ASSOC,
+        Database::FETCH_NUM=>MYSQLI_NUM,
+        Database::FETCH_BOTH=>MYSQLI_BOTH,
+    ];
 
     public function __construct(array $dbOptions) {
+        parent::__construct($dbOptions);
         if (isset($dbOptions['persistentConnection']) && $dbOptions['persistentConnection'] 
                 && substr($dbOptions['servername'],0,2)!=="p:") {
             $dbOptions['servername']="p:".$dbOptions['servername'];
@@ -25,6 +31,10 @@ class MySQLDatabase implements DatabaseInterface {
             $dbOptions['password'], 
             $dbOptions['database']
         );
+        if ($this->connection->connect_errno!==0) {
+            $this->errorHandler($this->connection->connect_error
+                ,$this->connection->connect_errno,'connection');
+        }
         return $this->connection;
     }
     
@@ -34,21 +44,13 @@ class MySQLDatabase implements DatabaseInterface {
         }
     }
     
-    public function getQuery() {
-        return $this->query;
-    }
-    
     public function getError($key=null) {
         $error=[
             'connectionDescription'=>$this->connection->connect_error,
             'connectionCode'=>$this->connection->connect_errno,
-            'description'=>null,
-            'code'=>null,
+            'description'=>$this->connection->error,
+            'code'=>$this->connection->errno,
         ];
-        if ($error['connectionCode']===0) {
-            $error['description']=$this->connection->error;
-            $error['code']=$this->connection->errno;
-        }
         return ($key===null) ? $error : $error[$key];
     }
     
@@ -58,6 +60,10 @@ class MySQLDatabase implements DatabaseInterface {
 
     private function execWithoutBind(string $query) {
         $this->result = $this->connection->query($query);
+        if ($this->connection->errno!==0) {
+            $this->errorHandler($this->connection->error
+                ,$this->connection->errno,'mysqli::query');
+        }
         $this->affectedRows = $this->connection->affected_rows;
     }
     
@@ -73,6 +79,7 @@ class MySQLDatabase implements DatabaseInterface {
             $this->connection->errno=-1;
             return false;
         } elseif (ArrayHelper::getType($vars)=='associative') {
+            $modifyVars=[];
             foreach ($vars as $key=>$var) {
                 $pattern='~".*?"(*SKIP)(*FAIL)|\'.*?\'(*SKIP)(*FAIL)|\:' . preg_quote($key, '~') . '\b~s';
                 $matches=[];
@@ -99,6 +106,8 @@ class MySQLDatabase implements DatabaseInterface {
         }
         $stmt = $this->connection->prepare($query);
         if (!$stmt) {
+            $this->errorHandler($this->connection->error
+                ,$this->connection->errno,'mysqli::prepare');
             return $this;
         }
         $stmt->bind_param($types, ...$values);
@@ -119,64 +128,65 @@ class MySQLDatabase implements DatabaseInterface {
      * get last inserted id
      * @return type
      */
-    public function getInsertId() {
+    public function getInsertedId() {
         return $this->connection->insert_id;
     }
     
-    private function fetchResult($syncId=null) {
-        $result=[];
+    private function fetchResult($all) {
+        $result = [];
         if ( is_object($this->result) && property_exists($this->result, 'num_rows') 
                 && $this->result->num_rows > 0 ) {
-            while ($row = $this->result->fetch_assoc()) {
-                $result[]=$row;
+            while ($row = $this->result->fetch_array(
+                    $this->resultType[$this->attributes[Database::ATTR_DEFAULT_FETCH_MODE]]
+            )) {
+                if (!$all) {
+                    $result = $row;
+                    break;
+                }
+                $result[] = $row;
             }
         }
-        return $result;
+        return !empty($result) ? $result : null;
     }
     
-    private function fetchStmt() {
+    private function fetchStmt($all) {
         $meta = $this->result->result_metadata(); 
         if (!$meta) {
             return false;
         }
+        $key = 0;
         while ($field = $meta->fetch_field()) 
         { 
-            $params[] = &$row[$field->name];
-        } 
-        call_user_func_array(array($this->result, 'bind_result'), $params); 
+            if ($this->attributes[Database::ATTR_DEFAULT_FETCH_MODE] === Database::FETCH_BOTH) {
+                $params[] = &$row[$field->name];
+                $row[$key++] = &$row[$field->name];
+            } elseif ($this->attributes[Database::ATTR_DEFAULT_FETCH_MODE] === Database::FETCH_NUM) {
+                $params[] = &$row[$key++];
+            } else { // Database::FETCH_ASSOC
+                $params[] = &$row[$field->name];
+            }
+        }
+        $this->result->bind_result(...$params);
         $result = [];
         while ($this->result->fetch()) { 
             foreach($row as $key => $val) 
             { 
                 $c[$key] = $val; 
             } 
-            $result[] = $c; 
+            if (!$all) {
+                $result = $c;
+                break;
+            }
+            $result[] = $c;
         }
-        return $result;
+        return !empty($result) ? $result : null;
     }
 
-    private function fetch() {
+    private function fetch($all=true) {
         return (get_class($this->result)=='mysqli_result') 
-                ? $this->fetchResult() : $this->fetchStmt();
+                ? $this->fetchResult($all) : $this->fetchStmt($all);
     }
     
-    private function syncId($data,$syncId) {
-        $result=[];
-        foreach ($data as $key=>$value) {
-            $k = isset($value[$syncId]) ? $value[$syncId] : $key;
-            if (!isset($result[$k])) {
-                $result[$k] = $value;
-            } else {
-                if (isset($result[$k][0])) {
-                    $result[$k][]=$value;
-                } else {
-                    $result[$k]=[$result[$k],$value];
-                }
-            }
-        }
-        return $result;
-    }
-
     public function getAll($syncId=null) {
         if (!is_object($this->result)) {
             return false;
@@ -190,8 +200,7 @@ class MySQLDatabase implements DatabaseInterface {
         if (!is_object($this->result)) {
             return false;
         }
-        $data = $this->fetch();
-        $data = isset($data[0]) ? $data[0] : null;
+        $data = $this->fetch(false);
         return $data;
     }
     
@@ -199,8 +208,8 @@ class MySQLDatabase implements DatabaseInterface {
         if (!is_object($this->result)) {
             return false;
         }
-        $data = $this->fetch();
-        $data = isset($data[0]) ? $data[0][key($data[0])] : null;
+        $data = $this->fetch(false);
+        $data = $data[key($data)];
         return $data;
     }
     
@@ -234,4 +243,12 @@ class MySQLDatabase implements DatabaseInterface {
         }
     }
     
+    /**
+     * Access to mysqli connection variable
+     * @return type
+     */
+    public function connection() {
+        return $this->connection;
+    }
+
 }

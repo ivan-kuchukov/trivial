@@ -2,15 +2,15 @@
 
 namespace trivial\models;
 use trivial\controllers\App;
+use trivial\models\Database;
 
 /**
  * Model for work with Database by PDO
  *
  * @author Ivan Kuchukov <ivan.kuchukov@gmail.com>
  */
-class PDODatabase implements DatabaseInterface {
+class PDODatabase extends Database implements DatabaseInterface {
     private $connection;
-    private $query;
     private $error=[
         'connectionDescription'=>0,
         'connectionCode'=>0,
@@ -25,10 +25,9 @@ class PDODatabase implements DatabaseInterface {
         'mariadb'=>'mysql',
         'postgresql'=>'pgsql',
     ];
-    public $fetch;
 
     public function __construct(array $dbOptions) {
-        $this->fetch = App::params('db.pdoFetch');
+        parent::__construct($dbOptions);
         $type = $this->type[strtolower($dbOptions['type'])] ?? 'mysql';
         try {
             $this->connection = new \PDO(
@@ -36,10 +35,12 @@ class PDODatabase implements DatabaseInterface {
                     .'dbname='.$dbOptions['database'].';'
                     .'host='.$dbOptions['servername'], 
                 $dbOptions['username'], 
-                $dbOptions['password']);
+                $dbOptions['password'],
+                $this->attributes);
         } catch (\PDOException $e) {
             $this->error['connectionDescription'] = $e->getMessage();
             $this->error['connectionCode'] = $e->getCode();
+            throw $e;
         }
         return $this->connection;
     }
@@ -50,8 +51,13 @@ class PDODatabase implements DatabaseInterface {
         }
     }
     
-    public function getQuery() {
-        return $this->query;
+    public function setAttribute(int $attribute, int $value) {
+        if ($this->connection->setAttribute($attribute, $value)) {
+            parent::setAttribute($attribute, $value);
+            return true;
+        } else {
+            return false;
+        }
     }
     
     public function getError($key=null) {
@@ -115,33 +121,25 @@ class PDODatabase implements DatabaseInterface {
         return $this;
     }
     
-    private function fetch() {
+    private function fetch($all=true) {
         if($this->resultType==='query') {
             $data = [];
             foreach ($this->result as $row) {
                 $data[] = $row;
+                if(!$all) {
+                    break;
+                }
             }
             return $data;
         } else {
-            return $this->result->fetchAll($this->fetch);
-        }
-    }
-    
-    private function syncId($data,$syncId) {
-        $result=[];
-        foreach ($data as $key=>$value) {
-            $k = isset($value[$syncId]) ? $value[$syncId] : $key;
-            if (!isset($result[$k])) {
-                $result[$k] = $value;
+            if ($all) {
+                return $this->result->fetchAll(
+                    $this->getAttribute(Database::ATTR_DEFAULT_FETCH_MODE));
             } else {
-                if (isset($result[$k][0])) {
-                    $result[$k][]=$value;
-                } else {
-                    $result[$k]=[$result[$k],$value];
-                }
+                return $this->result->fetch(
+                    $this->getAttribute(Database::ATTR_DEFAULT_FETCH_MODE));
             }
         }
-        return $result;
     }
 
     public function getAll($syncId=null) {
@@ -151,7 +149,7 @@ class PDODatabase implements DatabaseInterface {
     }
     
     public function getArray() {
-        $data = $this->fetch();
+        $data = $this->fetch(false);
         $data = isset($data[0]) ? $data[0] : null;
         return $data;
     }

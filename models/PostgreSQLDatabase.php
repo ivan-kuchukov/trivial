@@ -2,27 +2,37 @@
 
 namespace trivial\models;
 use trivial\controllers\App;
+use trivial\models\Database;
 
 /**
  * Model for work with Database
  *
  * @author Ivan Kuchukov <ivan.kuchukov@gmail.com>
  */
-class PostgreSQLDatabase implements DatabaseInterface {
+class PostgreSQLDatabase extends Database implements DatabaseInterface {
     private $connection;
-    private $query;
     private $result;
     private $affectedRows;
+    protected $resultType = [
+        Database::FETCH_ASSOC=>PGSQL_ASSOC,
+        Database::FETCH_NUM=>PGSQL_NUM,
+        Database::FETCH_BOTH=>PGSQL_BOTH,
+    ];
 
     public function __construct(array $dbOptions) {
+        parent::__construct($dbOptions);
         $options ="host=" . $dbOptions['servername'] . " " .
             "user=" . $dbOptions['username'] . " " .
             "password=" . $dbOptions['password'] . " " .
             "dbname=" . $dbOptions['database'];
         if (isset($dbOptions['persistentConnection']) && $dbOptions['persistentConnection']) {
-            @$this->connection = pg_pconnect($options);
+            $this->connection = @pg_pconnect($options);
         } else {
-            @$this->connection = pg_connect($options);
+            $this->connection = @pg_connect($options);
+        }
+        if (pg_connection_status($this->connection)!==PGSQL_CONNECTION_OK) {
+            $this->errorHandler("PostgreSQL. Can't connect to database."
+                ,null,'connection');
         }
         return $this->connection;
     }
@@ -31,10 +41,6 @@ class PostgreSQLDatabase implements DatabaseInterface {
         if (pg_connection_status($this->connection)===PGSQL_CONNECTION_OK) {
             pg_close($this->connection);
         }
-    }
-    
-    public function getQuery() {
-        return $this->query;
     }
     
     public function getError($key=null) {
@@ -59,6 +65,9 @@ class PostgreSQLDatabase implements DatabaseInterface {
         $this->result = @pg_query($this->connection,$query);
         if ($this->result) {
             $this->affectedRows = pg_affected_rows($this->result);
+        } else {
+            $this->errorHandler(pg_last_error($this->connection)
+                ,null,'pg_query');
         }
     }
     
@@ -74,6 +83,7 @@ class PostgreSQLDatabase implements DatabaseInterface {
             $this->connection->errno=-1;
             return false;
         } elseif (ArrayHelper::getType($vars)=='associative') {
+            $modifyVars=[];
             $varNumber=1;
             foreach ($vars as $key=>$var) {
                 $pattern='~".*?"(*SKIP)(*FAIL)|\'.*?\'(*SKIP)(*FAIL)|\:' . preg_quote($key, '~') . '\b~s';
@@ -101,11 +111,17 @@ class PostgreSQLDatabase implements DatabaseInterface {
         $result = @pg_prepare($this->connection,"",$query);
         if (!$result) {
             $this->result = false;
+            $this->errorHandler(pg_last_error($this->connection)
+                ,null,'pg_prepare');
             return false;
         }
         $this->result = @pg_execute($this->connection,"",$values);
         if ($this->result) {
             $this->affectedRows = pg_affected_rows($this->result);
+        } else {
+            $this->errorHandler(pg_last_error($this->connection)
+                ,null,'pg_execute');
+            return false;
         }
     }
 
@@ -114,57 +130,26 @@ class PostgreSQLDatabase implements DatabaseInterface {
         empty($vars) 
             ? $this->execWithoutBind($query) 
             : $this->execWithBind($query, $vars);
-        /*$this->queriesCount++;
-        if ( ! $this->result ) {
-            $this->errorQueriesCount++;
-            if ($this->errorLog=="display") {
-                echo 'Error in DB query: ' . $this->getError('description') . PHP_EOL;
-            }
-            if ($this->errorLog=="log" || $this->errorLog=="display") {
-                Log::add("dbDebugFile",__METHOD__, $query . ". ERROR: " . $this->getError('description') );
-                Log::add("errorsFile",__METHOD__, $query . ". ERROR: " . $this->getError('description') );
-            }
-        } else if ( $this->queriesLog ) {
-            $text = $query . (!empty($vars) ? '. ' . json_encode($vars) : '' );
-            Log::add("dbDebugFile",__METHOD__, $text);
-        }*/
         return $this;
     }
     
-    private function syncId($data,$syncId) {
-        $result=[];
-        foreach ($data as $key=>$value) {
-            $k = isset($value[$syncId]) ? $value[$syncId] : $key;
-            if (!isset($result[$k])) {
-                $result[$k] = $value;
-            } else {
-                if (isset($result[$k][0])) {
-                    $result[$k][]=$value;
-                } else {
-                    $result[$k]=[$result[$k],$value];
-                }
-            }
-        }
-        return $result;
-    }
-
     public function getAll($syncId=null) {
         if (!$this->result) {
             return false;
         }
-        $data = pg_fetch_all($this->result);
+        $data = pg_fetch_all($this->result
+            ,$this->resultType[$this->attributes[Database::ATTR_DEFAULT_FETCH_MODE]]);
         $data = (!is_null($syncId)) ? $this->syncId($data,$syncId) : $data;
-        $data = $data ?: [];
-        return $data;
+        return $data ?: [];
     }
     
     public function getArray() {
         if (!$this->result) {
             return false;
         }
-        $data = pg_fetch_all($this->result);
-        $data = isset($data[0]) ? $data[0] : null;
-        return $data;
+        $data = pg_fetch_array($this->result, null
+            ,$this->resultType[$this->attributes[Database::ATTR_DEFAULT_FETCH_MODE]]);
+        return !is_bool($data) ? $data : null;
     }
     
     public function getScalar() {

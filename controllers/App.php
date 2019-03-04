@@ -2,6 +2,7 @@
 
 namespace trivial\controllers;
 use trivial\models\DatabaseFactory;
+use trivial\controllers\UrlController;
 
 /**
  * Application
@@ -14,6 +15,10 @@ class App {
     private static $optionsFile = ROOT_DIR . DIR_SEP . 'config' . DIR_SEP . 'config.php';
     private static $uid = null;
     private static $input = null;
+    
+    public static function init() {
+        new UrlController();
+    }
 
     public static function params($opt='') {
         if (is_null(self::$params)) {
@@ -47,10 +52,6 @@ class App {
     
     private static function createDb($name) {
         self::$db = DatabaseFactory::create(self::params($name));
-        if (!self::$db || self::$db->getError('connectionCode') !== 0) {
-            echo "Can't connect to DB";
-            exit(1);
-        }
         return self::$db;
     }
     
